@@ -20,6 +20,14 @@ spec:
     - name: {{ .Values.volumes.name }}
       mountPath: "/var/www/html/config.php"
       subPath: "config.php"
+    env:
+    - name: DB_HOST
+      value: {{ .Values.pod.name }}
+    - name: DB_USER
+      valueFrom:
+        secretKeyRef:
+          name: {{.Values.secret.name}}
+          key: DB_USER
   
   - name: {{ .Values.pod.mysqlSosmed.name }}
     image: {{ .Values.pod.mysqlSosmed.image }} 
@@ -27,4 +35,7 @@ spec:
     - containerPort: {{ .Values.port.mysql }}
     env:
       - name: MYSQL_ROOT_PASSWORD 
-        value: {{ .Values.pod.mysqlSosmed.env.MYSQL_ROOT_PASSWORD | quote }}
+        valueFrom:
+          secretKeyRef:
+            name: {{.Values.secret.name}}
+            key: MYSQL_ROOT_PASSWORD

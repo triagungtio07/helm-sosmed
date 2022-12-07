@@ -28,3 +28,12 @@ volumes:
 
 nameSpace:
   name: devops-agung
+
+secret:
+  name: p-secret-fb
+  type: Opaque
+  data: 
+    dbUser: ZGV2b3BzY2lsc3k=
+    dbPass: MTIzNDU2Nzg5MA==
+    dbRootPass: MTIzNDU2Nzg5MA==
+
