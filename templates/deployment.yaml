@@ -1,0 +1,101 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{.Values.nameSpace.name}}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{.Values.secret.name}}
+  namespace: {{.Values.nameSpace.name}}
+  labels:
+    app:  {{ .Values.labels.app }}
+type:  {{.Values.secret.type}}
+data:
+  DB_USER: {{.Values.secret.data.dbUser}}
+  DB_PASS: {{.Values.secret.data.dbPass}}
+  MYSQL_ROOT_PASSWORD: {{.Values.secret.data.dbRootPass}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configMap.name }}
+  namespace: {{.Values.nameSpace.name}}
+  labels:
+    app: {{ .Values.labels.app }}
+data:
+  config.php: |
+    <?php
+    $db_host = getenv("DB_HOST");
+    $db_user = getenv("DB_USER");
+    $db_pass = getenv("DB_PASS");
+    $db_name = "dbsosmed";
+    try {    
+      //create PDO connection
+      $db = new PDO("mysql:host=$db_host;dbname=$db_name", $db_user, $db_pass);
+    } catch(PDOException $e) {
+      //show error
+      die("Terjadi masalah: " . $e->getMessage());
+    }
+    ?>
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Values.pod.name }}
+  namespace: {{.Values.nameSpace.name}}
+  labels:
+    app: {{ .Values.labels.app }}
+spec:
+  volumes:
+    - name: {{ .Values.volumes.name }}
+      configMap:
+        name: {{ .Values.configMap.name }}
+    
+  containers:
+  - name: {{ .Values.pod.phpSosmed.name }} 
+    image: {{ .Values.pod.phpSosmed.image }}
+    ports:
+    - containerPort: {{ .Values.port.http }}
+    volumeMounts:
+    - name: {{ .Values.volumes.name }}
+      mountPath: "/var/www/html/config.php"
+      subPath: "config.php"
+    env:
+    - name: DB_HOST
+      value: {{ .Values.pod.name }}
+    - name: DB_USER
+      valueFrom:
+        secretKeyRef:
+          name: {{.Values.secret.name}}
+          key: DB_USER
+    - name: DB_PASS
+      valueFrom:
+        secretKeyRef:
+          name: {{.Values.secret.name}}
+          key: DB_PASS
+  
+  - name: {{ .Values.pod.mysqlSosmed.name }}
+    image: {{ .Values.pod.mysqlSosmed.image }} 
+    ports:
+    - containerPort: {{ .Values.port.mysql }}
+    env:
+      - name: MYSQL_ROOT_PASSWORD 
+        valueFrom:
+          secretKeyRef:
+            name: {{.Values.secret.name}}
+            key: MYSQL_ROOT_PASSWORD
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.service.name }}
+  namespace: {{.Values.nameSpace.name}}
+spec:
+  selector:
+    app: {{ .Values.labels.app }}
+  type: {{ .Values.service.type }}
+  ports:
+  - protocol: {{ .Values.service.protocol }}
+    port: {{ .Values.port.http }}
+    targetPort: {{ .Values.port.http }}
