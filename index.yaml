@@ -9,6 +9,6 @@ entries:
     name: sosmed
     type: application
     urls:
-    - docs/sosmed-0.1.0.tgz
+    - sosmed-0.1.0.tgz
     version: 0.1.0
 generated: "2022-12-08T21:20:13.878546+07:00"
